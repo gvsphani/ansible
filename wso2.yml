@@ -1,0 +1,42 @@
+- hosts: all
+  become: true
+  vars:
+    - remote_user: nodeslave
+    - become_method: sudo
+  tasks:
+   - name: Add apt-repository for java
+     action: command sudo add-apt-repository ppa:webupd8team/java -y
+   - name: Do a update
+     become: yes
+     become_method: sudo
+     action: command apt update
+   - name: Install Oracle Java8 installer
+     action: command sudo apt-get -y install oracle-java8-installer
+   - name: Install oracle-java8-set-default
+     action: command sudo apt-get -y install oracle-java8-set-default
+   - name: Install activemq 
+     become: true
+     become_method: sudo
+     apt: pkg=activemq state=latest
+   - name: Install unzip
+     become: true
+     become_method: sudo
+     apt: pkg=unzip state=present
+   - name: Install Subversion
+     become: true
+     become_method: sudo
+     apt: pkg=subversion state=present
+   - name: Install Maven
+     become: true
+     become_method: sudo
+     apt: pkg=maven state=present   
+   - name: Creation of user in the 
+     user: name=wso2 comment="wso2 identity" 
+   - name: Create a directory in opt with permissions to wso2 user
+     file: path=/opt/wso2 owner=wso2 group=wso2 mode=0755
+   - name: transfer the shell script and put i
+     copy: src= wso2-is.sh dest=/etc/init/wso2-is mode=0775
+
+
+
+   

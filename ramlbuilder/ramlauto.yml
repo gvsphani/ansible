@@ -1,0 +1,66 @@
+---
+- hosts: all 
+  vars:
+   - remote_user: nodeslave
+     repo: https://sgardas@bitbucket.org/mountainstatesoftware/raml-builder.git
+     branch: develop
+  tasks:
+   - name: Add mongo ppa key
+     become_method: sudo
+     apt_key: 
+      keyserver: hkp://keyserver.ubuntu.com:80
+      id: 7F0CEB10
+      state: present
+   - name: check if mongodb is installed in the machine
+     apt: 	
+         name: mongodb
+         state: present
+   - name: Check if git is installed in the host machine
+     apt: 
+         name: git
+         state: present
+   - file: path=/home/nodeslave/ramlbuilder state=directory mode=0755
+   - name: send the key to remote user
+     copy: src=/home/ansiblemaster/.ssh/id_rsa_bitbucket dest=/home/{{remote_user}}/.ssh/id_rsa_bitbucket mode=0755
+   - name: change the permissions of the private key
+     file: path=/home/{{remote_user}}/.ssh/id_rsa_bitbucket owner=nodeslave group=nodeslave mode=0400
+   - name: pull code
+     git: 
+      repo:  git@bitbucket.org:mountainstatesoftware/raml-builder.git
+      dest: /home/{{remote_user}}/ramlbuilder
+      version: develop
+      accept_hostkey: yes
+      key_file: /home/{{remote_user}}/.ssh/id_rsa_bitbucket
+   - name: remove the directory node_modules
+     file: path=/home/{{remote_user}}/ramlbuilder/node_modules state=absent
+   - name: Install npm in the system
+     apt: pkg=npm state=present update_cache=yes
+   - name: Install gulp globally using npm
+     action: command sudo npm install -g gulp
+   - name: Install bower globally using npm
+     npm: name=bower global=yes path=/home/{{remote_user}}/ramlbuilder/app
+   - name: Install forever globally using npm
+     npm: name=forever global=yes
+ # - name: run this command
+ #   command: node ./node_modules/mongodb-migrate -runmm
+ # - name: change the directory and execute the command forver stop
+ #   command: chdir=/home/{{remote_user}}/ramlbuilder npm install
+   - name: execute npm install in the ramlbuilder directory
+     become: yes
+     become_method: sudo
+     command: npm install chdir=ramlbuilder
+   - name: change the directory and execute bower install
+     become: yes
+     become_method: sudo
+     command: bower install chdir=ramlbuilder
+   - name: change the directory and execute gulp
+     become: true
+     become_method: sudo
+     command: gulp chdir={/home/{{remote_user}}/ramlbuilder}
+   - name: change the directory and execute gulp dev
+     command: chdir=/home/{{remote_user}}/raml-builder gulp dev
+   - name: change the directory and execute forever command
+     command: chdir=/home/{{remote_user}}/raml-builder forever start gulp prod 
+
+
+
